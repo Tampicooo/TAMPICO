@@ -1,0 +1,24 @@
+{
+ "name": "Tampico \u00b7 Climb the Rare",
+ "short_name": "Tampico",
+ "start_url": "./",
+ "scope": "./",
+ "display": "standalone",
+ "orientation": "any",
+ "background_color": "#1d4f91",
+ "theme_color": "#1d4f91",
+ "description": "Name the answers nobody else thinks of and climb 26 real mountains.",
+ "icons": [
+  {
+   "src": "icon-192.png",
+   "sizes": "192x192",
+   "type": "image/png"
+  },
+  {
+   "src": "icon-512.png",
+   "sizes": "512x512",
+   "type": "image/png",
+   "purpose": "any maskable"
+  }
+ ]
+}

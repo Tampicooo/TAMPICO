@@ -14,8 +14,9 @@
 <meta property="og:image" content="icon-512.png">
 <style>html,body{margin:0;height:100%}</style>
 <script>window.SITE_CFG={url:"https://qppbgoymuvvcqlcrrwkl.supabase.co",key:"sb_publishable_Qbz-7_u2AvDo4UpiplKv9g_D4vctqnP"};</script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-<script src="shim.js?v=1.18"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>if(!window.supabase)document.write('<script src="https://unpkg.com/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"><\/script>')</script>
+<script src="shim.js?v=1.19"></script>
 </head>
 <body>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=Barlow+Semi+Condensed:wght@400;500;600;700&display=swap">
@@ -594,6 +595,7 @@ form .btn.go{padding:14px 20px}
     <div class="opt"><div><b>Best scores</b><span>Clear your best height for every mountain and topic.</span></div><button class="btn" type="button" id="resetBest">Reset</button></div>
     <div class="opt"><div><b>Found a bug?</b><span>Tell us what happened. Errors are also reported automatically.</span></div><button class="btn" type="button" data-hub="bug">REPORT</button></div>
     <div class="opt" id="ownerRow"><div><b>Owner key</b><span id="ownerNote">Only for the game's owner: unlocks the Bug Inbox and moderation on this device.</span></div><div class="postrow" style="max-width:360px"><input id="ownerKey" type="password" autocomplete="off" placeholder="Paste owner key"><button class="btn" type="button" id="ownerSave">SAVE</button></div></div>
+    <div class="opt"><div><b>Connection check</b><span id="netOut">Tests your connection to the leaderboard, crews and live games.</span></div><button class="btn" type="button" id="netBtn">RUN CHECK</button></div>
     <p class="sub verline" id="verLine"></p>
   </section>
 </main>
@@ -781,7 +783,7 @@ addEventListener("unhandledrejection",e=>{try{const r=e.reason;if(r&&r.code&&!r.
   window.__bugq.push({k:"promise",m:String(r&&r.message||r).slice(0,300),s:String(r&&r.stack||"").slice(0,600)});window.__bugq.flush&&window.__bugq.flush()}catch(_){}});
 (()=>{
 const $=id=>document.getElementById(id);
-const GAME_VER="1.18";
+const GAME_VER="1.19";
 const TIERS=[
  {name:"Trailhead",pts:5,o2:3,c:"#c9d4e0"},
  {name:"Ridge",pts:15,o2:5,c:"#7ee08f"},
@@ -2510,13 +2512,13 @@ function duelVerdict(){if(!S||S.running||!S.shared||!LIVE.game)return;const ps=g
 async function makeCode(mode){LIVE.code=Math.random().toString(36).slice(2,7);await joinGame("p-"+LIVE.code,mode)}
 function renderLive(){const box=$("liveBody");if(!box)return;
   if(!ROOM){box.innerHTML=`<p class="sub">Live games couldn't connect right now. Check your internet and reload. You can still race ghosts on any mountain.</p>`;return}
-  const n=ROOM.peers().length;
+  const n=ROOM.peers().length,NS=window.TAMPICO_NET,netLine=NS&&NS.live!=="ok"?`<p class="sub ${NS.live==="pending"?"":"msg-bad"}">Live connection: ${esc(NS.live==="pending"?"connecting…":NS.live)}${NS.live==="pending"?"":" · Options → Connection check has details"}</p>`:"";
   if(LIVE.game){const ps=gamePeers(),me=ps.find(p=>p.sameTab);
     box.innerHTML=`<div class="livegame"><div class="k">${LIVE.mode==="duel"?"DUEL":"ROPE TEAM"}${LIVE.code?` · code <b class="code">${LIVE.code.toUpperCase()}</b>`:""}</div>
       <div class="lpeople">${ps.map((p,i)=>`<span class="lperson" style="--c:${(p.presence||{}).col||"#9fd4ff"}" data-i="${i}"></span>`).join("")}</div>
       <p class="sub">${LIVE.mode==="duel"?"Two climbers, the same mountain and the same prompts. First to the summit wins; if you both run out of oxygen, the higher climb wins.":"Up to 4 climbers on the same prompts. Your heights add up, and every Death Zone or First Ascent answer tugs the rope: +5s oxygen for everyone else."}</p>
       ${LIVE.host?`<button class="btn go bigstart" type="button" id="liveGo" ${ps.length>=2&&ps.length<=(LIVE.mode==="duel"?2:4)?"":"disabled"}>${ps.length<2?"WAITING FOR PLAYERS…":ps.length>(LIVE.mode==="duel"?2:4)?"TOO MANY PLAYERS":"START"}</button>`:`<p class="k">Waiting for the host to start…</p>`}
-      <button class="btn" type="button" id="liveLeave">LEAVE</button></div>`;
+      <button class="btn" type="button" id="liveLeave">LEAVE</button>${netLine}</div>`;
     [...box.querySelectorAll(".lperson")].forEach(el=>{const p=ps[+el.dataset.i];el.textContent=(p.sameTab?"You":String((p.presence||{}).nm||"Climber").slice(0,16))+(p.peer===[...ps.map(x=>x.peer)].sort()[0]?" · host":"")});void me;return}
   box.innerHTML=`<p class="sub"><b>${n}</b> ${n===1?"climber":"climbers"} here right now.</p>
    <div class="livegrid">
@@ -2525,7 +2527,7 @@ function renderLive(){const box=$("liveBody");if(!box)return;
     <section class="glass panel"><h3>Rope team</h3><p class="sub">2–4 friends on your chosen mountain. Your heights add up, and rare answers share oxygen.</p>
       <button class="btn go" type="button" data-mk="rope">START A ROPE TEAM</button></section>
     <section class="glass panel"><h3>Have a code?</h3><div class="postrow"><input id="liveCode" maxlength="5" placeholder="5-letter code" autocomplete="off" spellcheck="false"><button class="btn go" type="button" id="liveJoin">JOIN</button></div></section>
-   </div><p class="sub" id="liveMsg"></p>`}
+   </div><p class="sub" id="liveMsg"></p>${netLine}`}
 $("live").addEventListener("click",async e=>{const t=e.target;
   if(t.id==="liveSeek"){LIVE.seek=LIVE.seek?null:"duel";ROOM&&ROOM.presence({seek:LIVE.seek,nm:myName()||"Climber"}).catch(()=>{});renderLive();if(LIVE.seek)tryPair(ROOM.peers());return}
   const mk=t.closest("[data-mk]");if(mk){await makeCode(mk.dataset.mk);return}
@@ -2815,6 +2817,7 @@ function renderBoard(){
   if(lbState==="loading"){note.textContent="Connecting to the leaderboard…";rowsEl.innerHTML="";me.textContent="";return}
   if(lbState!=="ready"){note.textContent=lbState==="error"?"The leaderboard couldn't load right now. Your scores are still saved on this device.":"The shared leaderboard couldn't connect right now. Your best heights are still saved on this device.";rowsEl.innerHTML="";me.textContent="";return}
   const daily=lbTab==="daily",field=daily?"dailyMeters":"best";
+  if(window.TAMPICO_NET&&window.TAMPICO_NET.db==="error"&&!(daily?lbDaily:lbAll).length){note.textContent="The leaderboard couldn't load. Options → Connection check shows why.";rowsEl.innerHTML="";me.textContent="";return}
   const rows=(daily?lbDaily:lbAll).filter(r=>typeof r.name==="string"&&nameProblem(r.name)===""&&r[field]>0);
   note.textContent=daily?`Today's expedition (${dailyKey()}): everyone gets the same mountain, topics and prompts. It resets at 1:00 AM Central.`:"Best single climb by each player. Score is height × the mountain's tier (Beginner ×1, Intermediate ×1.25, Advanced ×1.5, Expert ×2), and height only comes from rare answers.";
   rowsEl.innerHTML=rows.length?rows.map((r,i)=>`<tr class="${r.id===UID?"me ":""}${i<3?"top"+(i+1):""}"><td class="r">${i+1}</td><td class="who"><b></b><span>${esc(r.title||"")}${daily?"":r.bestMap?" · "+esc(r.bestMap):""}</span></td><td><b>${Number(r[field]).toLocaleString()}</b><div class="sub" style="margin:0">${daily?"":r.bestMeters?Number(r.bestMeters).toLocaleString()+" m":""}${!daily&&r.bestLevel?" · "+esc(r.bestLevel):""}</div></td><td class="rare"></td></tr>`).join(""):
@@ -3115,6 +3118,10 @@ go("cover");scene.run();setTimeout(()=>{checkAch();renderCover()},600);
 <script>(function(){var k=window.TAMPICO_OWNER;var i=document.getElementById("ownerKey"),b=document.getElementById("ownerSave"),n=document.getElementById("ownerNote");if(!k||!i)return;
 if(k.get()){n.textContent="Owner key saved on this device. Bug Inbox is in Help. Clear the box and save to remove it.";i.value=k.get()}
 b.addEventListener("click",function(){k.set(i.value.trim())});})();
+(function(){var b=document.getElementById("netBtn"),o=document.getElementById("netOut");if(!b)return;b.addEventListener("click",async function(){
+  if(!window.TAMPICO_CHECK){o.textContent="The online library didn't load. Check your internet or try another browser.";return}
+  b.disabled=true;o.textContent="Checking…";var r=await window.TAMPICO_CHECK();b.disabled=false;
+  o.textContent="Sign-in: "+r.auth+" · Leaderboard database: "+r.db+" · Live games: "+r.live+(r.recent.length?" · Recent errors: "+r.recent.join(" | "):"")});})();
 if("serviceWorker" in navigator&&location.protocol==="https:")navigator.serviceWorker.register("sw.js").catch(function(){});</script>
 </body>
 </html>
